@@ -1,64 +1,42 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 import MovieCard from "../components/MovieCard";
 import AmbientBackground from "../components/AmbientBackground";
 import FloatingOrbs from "../components/FloatingOrbs";
+import api from "../services/api";
 
 function Home() {
-  const featuredMovies = [
-    {
-      id: 1,
-      title: "Interstellar",
-      type: "Movie",
-      year: "2014",
-      rating: "8.7",
-      image: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-    },
-    {
-      id: 2,
-      title: "Breaking Bad",
-      type: "Series",
-      year: "2008",
-      rating: "9.5",
-      image: "https://image.tmdb.org/t/p/w500/ztkUQFLlC19CCMYHW9o1zWhJRNq.jpg",
-    },
-    {
-      id: 3,
-      title: "Dune",
-      type: "Movie",
-      year: "2021",
-      rating: "8.0",
-      image: "https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg",
-    },
-  ];
+  const [featuredMovies, setFeaturedMovies] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
 
-  const trendingMovies = [
-    {
-      id: 4,
-      title: "Inception",
-      type: "Movie",
-      year: "2010",
-      rating: "8.8",
-      image: "https://image.tmdb.org/t/p/w500/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg",
-    },
-    {
-      id: 5,
-      title: "The Batman",
-      type: "Movie",
-      year: "2022",
-      rating: "7.8",
-      image: "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg",
-    },
-    {
-      id: 6,
-      title: "Oppenheimer",
-      type: "Movie",
-      year: "2023",
-      rating: "8.5",
-      image: "https://image.tmdb.org/t/p/w500/ptpr0kGAckfQkJeJIt8st5dglvd.jpg",
-    },
-  ];
+  useEffect(() => {
+    fetchContent();
+  }, []);
+
+  async function fetchContent() {
+    try {
+      const res = await api.get("/content");
+
+      // mapiramo u oblik koji MovieCard očekuje
+      const mapped = res.data.map((item) => ({
+        id: item.id,                                    // PRAVI id iz baze
+        title: item.title,
+        type: item.type === "series" ? "Series" : "Movie",
+        year: String(item.release_year),
+        rating: item.rating,
+        image: item.poster_url,                         // PRAVA slika iz baze
+      }));
+
+      // npr. prvih 3 kao "Featured", sledeća 3 kao "Trending"
+      setFeaturedMovies(mapped.slice(0, 3));
+      setTrendingMovies(mapped.slice(3, 6));
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
 
   return (
     <main>
