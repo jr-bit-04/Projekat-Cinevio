@@ -5,43 +5,102 @@ import { motion } from "framer-motion";
 
 import api from "../services/api";
 import AmbientBackground from "../components/AmbientBackground";
+import { useAuth } from "../context/auth";
 
 function SeriesDetails() {
   const { id } = useParams();
+  const { user } = useAuth();
 
   const [series, setSeries] = useState(null);
+  const [userRating, setUserRating] = useState(null);
+  const [watchlistStatus, setWatchlistStatus] = useState(null);
+  const [topListId, setTopListId] = useState(null);
   const [episodes, setEpisodes] = useState([]);
+  const [tmdbDetails, setTmdbDetails] = useState({
+    cast: [],
+    seasons: [],
+    awards: [],
+    awardsMessage: "",
+    trailer_url: "",
+  });
+  const [seasonDetails, setSeasonDetails] = useState({
+    episodes: [],
+  });
   const [activeTab, setActiveTab] = useState("overview");
   const [activeSeason, setActiveSeason] = useState(1);
 
   const [episodeComments, setEpisodeComments] = useState({});
+  const [editingEpisodeId, setEditingEpisodeId] = useState(null);
+  const [editingEpisodeComment, setEditingEpisodeComment] = useState("");
   const [reviewText, setReviewText] = useState("");
+  const [reviewIsPublic, setReviewIsPublic] = useState(true);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editingReviewText, setEditingReviewText] = useState("");
+  const [editingReviewIsPublic, setEditingReviewIsPublic] = useState(true);
   const [discussionTitle, setDiscussionTitle] = useState("");
   const [discussionBody, setDiscussionBody] = useState("");
+  const [editingDiscussionId, setEditingDiscussionId] = useState(null);
+  const [editingDiscussionTitle, setEditingDiscussionTitle] = useState("");
+  const [editingDiscussionBody, setEditingDiscussionBody] = useState("");
   const [reviews, setReviews] = useState([]);
   const [discussions, setDiscussions] = useState([]);
 
-  const seasons = [1, 2, 3];
-
   useEffect(() => {
     fetchSeries();
-    fetchEpisodes();
+    fetchTmdbDetails();
+    fetchUserRating();
+    fetchSavedEpisodes();
     fetchReviews();
     fetchDiscussions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  useEffect(() => {
+    fetchSeasonDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, activeSeason]);
+
   async function fetchSeries() {
     try {
       const res = await api.get(`/content/${id}`);
       setSeries(res.data);
+      fetchUserContentState(res.data);
     } catch (error) {
       console.log(error);
       toast.error("Failed to load series");
     }
   }
 
-  async function fetchEpisodes() {
+  async function fetchTmdbDetails() {
+    try {
+      const res = await api.get(`/tmdb/series/${id}/details`);
+      setTmdbDetails(res.data);
+
+      if (res.data.seasons?.length > 0) {
+        setActiveSeason(res.data.seasons[0].season_number);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function fetchSeasonDetails() {
+    try {
+      const res = await api.get(
+        `/tmdb/series/${id}/seasons/${activeSeason}`
+      );
+      setSeasonDetails(res.data);
+    } catch (error) {
+      console.log(error);
+      setSeasonDetails({ episodes: [] });
+    }
+  }
+
+  async function fetchSavedEpisodes() {
+    if (!localStorage.getItem("token")) {
+      return;
+    }
+
     try {
       const res = await api.get(`/episodes/${id}`);
       setEpisodes(res.data);
@@ -54,6 +113,47 @@ function SeriesDetails() {
     try {
       const res = await api.get(`/reviews/${id}`);
       setReviews(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function fetchUserRating() {
+    if (!localStorage.getItem("token")) {
+      setUserRating(null);
+      return;
+    }
+
+    try {
+      const res = await api.get(`/ratings/${id}`);
+      setUserRating(res.data?.rating || null);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function fetchUserContentState(contentItem) {
+    if (!localStorage.getItem("token")) {
+      setWatchlistStatus(null);
+      setTopListId(null);
+      return;
+    }
+
+    try {
+      const [watchlistRes, topListRes] = await Promise.all([
+        api.get("/watchlist"),
+        api.get("/top-lists/top_series"),
+      ]);
+
+      const watchlistItem = watchlistRes.data.find(
+        (item) => Number(item.id) === Number(contentItem.id)
+      );
+      const topListItem = topListRes.data.find(
+        (item) => Number(item.id) === Number(contentItem.id)
+      );
+
+      setWatchlistStatus(watchlistItem?.status || null);
+      setTopListId(topListItem?.top_id || null);
     } catch (error) {
       console.log(error);
     }
@@ -75,6 +175,7 @@ function SeriesDetails() {
         status,
       });
 
+      setWatchlistStatus(status);
       toast.success(
         status === "watched" ? "Marked as watched" : "Added to watchlist"
       );
@@ -91,6 +192,7 @@ function SeriesDetails() {
         rating: rate,
       });
 
+      setUserRating(rate);
       toast.success(`You rated ${rate}/10`);
     } catch (error) {
       console.log(error);
@@ -98,18 +200,43 @@ function SeriesDetails() {
     }
   }
 
+  async function deleteRating() {
+    try {
+      await api.delete(`/ratings/${id}`);
+      setUserRating(null);
+      toast.success("Rating removed");
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to remove rating");
+    }
+  }
+
   async function addToTopList() {
     try {
-      await api.post("/top-lists", {
+      const res = await api.post("/top-lists", {
         content_id: Number(id),
         list_type: "top_series",
         position: 1,
       });
 
+      setTopListId(res.data.item.id);
       toast.success("Added to Top Series");
     } catch (error) {
       console.log(error);
       toast.error("Failed to add to top list");
+    }
+  }
+
+  async function removeFromTopList() {
+    if (!topListId) return;
+
+    try {
+      await api.delete(`/top-lists/${topListId}`);
+      setTopListId(null);
+      toast.success("Removed from top list");
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to remove from top list");
     }
   }
 
@@ -120,14 +247,61 @@ function SeriesDetails() {
       await api.post("/reviews", {
         content_id: Number(id),
         review_text: reviewText,
+        is_public: reviewIsPublic,
       });
 
       toast.success("Review posted");
       setReviewText("");
+      setReviewIsPublic(true);
       fetchReviews();
     } catch (error) {
       console.log(error);
       toast.error("Failed to post review");
+    }
+  }
+
+  function startEditingReview(review) {
+    setEditingReviewId(review.id);
+    setEditingReviewText(review.review_text);
+    setEditingReviewIsPublic(review.is_public);
+  }
+
+  function cancelEditingReview() {
+    setEditingReviewId(null);
+    setEditingReviewText("");
+    setEditingReviewIsPublic(true);
+  }
+
+  async function updateReview(reviewId) {
+    if (!editingReviewText.trim()) return;
+
+    try {
+      await api.put(`/reviews/${reviewId}`, {
+        review_text: editingReviewText,
+        is_public: editingReviewIsPublic,
+      });
+
+      toast.success("Review updated");
+      cancelEditingReview();
+      fetchReviews();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to update review");
+    }
+  }
+
+  async function deleteReview(reviewId) {
+    const confirmed = window.confirm("Delete this review?");
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/reviews/${reviewId}`);
+      toast.success("Review deleted");
+      fetchReviews();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to delete review");
     }
   }
 
@@ -151,7 +325,52 @@ function SeriesDetails() {
     }
   }
 
-  async function saveEpisode(episodeNumber, isFavorite = false) {
+  function startEditingDiscussion(discussion) {
+    setEditingDiscussionId(discussion.id);
+    setEditingDiscussionTitle(discussion.title);
+    setEditingDiscussionBody(discussion.body);
+  }
+
+  function cancelEditingDiscussion() {
+    setEditingDiscussionId(null);
+    setEditingDiscussionTitle("");
+    setEditingDiscussionBody("");
+  }
+
+  async function updateDiscussion(discussionId) {
+    if (!editingDiscussionTitle.trim() || !editingDiscussionBody.trim()) return;
+
+    try {
+      await api.put(`/discussions/${discussionId}`, {
+        title: editingDiscussionTitle,
+        body: editingDiscussionBody,
+      });
+
+      toast.success("Discussion updated");
+      cancelEditingDiscussion();
+      fetchDiscussions();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to update discussion");
+    }
+  }
+
+  async function deleteDiscussion(discussionId) {
+    const confirmed = window.confirm("Delete this discussion?");
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/discussions/${discussionId}`);
+      toast.success("Discussion deleted");
+      fetchDiscussions();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to delete discussion");
+    }
+  }
+
+  async function saveEpisode(episodeNumber, isFavorite = false, title = "") {
     const commentKey = `${activeSeason}-${episodeNumber}`;
 
     try {
@@ -159,7 +378,7 @@ function SeriesDetails() {
         content_id: Number(id),
         season_number: activeSeason,
         episode_number: episodeNumber,
-        title: `Episode ${episodeNumber}`,
+        title: title || `Episode ${episodeNumber}`,
         is_favorite: isFavorite,
         comment: episodeComments[commentKey] || "",
       });
@@ -169,7 +388,7 @@ function SeriesDetails() {
         ...current,
         [commentKey]: "",
       }));
-      fetchEpisodes();
+      fetchSavedEpisodes();
     } catch (error) {
       console.log(error);
       toast.error("Failed to save episode");
@@ -182,6 +401,47 @@ function SeriesDetails() {
         episode.season_number === activeSeason &&
         episode.episode_number === episodeNumber
     );
+  }
+
+  function startEditingFavorite(episode) {
+    setEditingEpisodeId(episode.id);
+    setEditingEpisodeComment(episode.comment || "");
+  }
+
+  function cancelEditingFavorite() {
+    setEditingEpisodeId(null);
+    setEditingEpisodeComment("");
+  }
+
+  async function saveFavoriteEdit(episode) {
+    try {
+      await api.post("/episodes", {
+        content_id: Number(id),
+        season_number: episode.season_number,
+        episode_number: episode.episode_number,
+        title: episode.title,
+        is_favorite: true,
+        comment: editingEpisodeComment,
+      });
+
+      toast.success("Favorite episode updated");
+      cancelEditingFavorite();
+      fetchSavedEpisodes();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to update favorite episode");
+    }
+  }
+
+  async function deleteFavoriteEpisode(episodeId) {
+    try {
+      await api.delete(`/episodes/${episodeId}`);
+      toast.success("Favorite episode deleted");
+      fetchSavedEpisodes();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to delete favorite episode");
+    }
   }
 
   if (!series) {
@@ -199,6 +459,24 @@ function SeriesDetails() {
   }
 
   const genres = series.genre ? series.genre.split(",") : [];
+  const seasons = tmdbDetails.seasons || [];
+  const currentSeason = seasons.find(
+    (season) => season.season_number === activeSeason
+  );
+  const displayEpisodes = seasonDetails.episodes || [];
+  const favoriteEpisodes = episodes.filter(
+    (episode) => episode.is_favorite
+  );
+  const tabs = [
+    "overview",
+    "episodes",
+    "favorites",
+    "cast",
+    "awards",
+    "media",
+    "discussions",
+    "reviews",
+  ];
 
   return (
     <main className="details-page">
@@ -245,23 +523,49 @@ function SeriesDetails() {
             <p className="details-description">{series.description}</p>
 
             <div className="details-actions">
-              <button onClick={() => addToWatchlist("watchlist")}>
-                + Watchlist
+              <button
+                className={
+                  watchlistStatus === "watchlist"
+                    ? "action-complete"
+                    : ""
+                }
+                onClick={() => addToWatchlist("watchlist")}
+              >
+                {watchlistStatus === "watchlist"
+                  ? "✓ Watchlisted"
+                  : "+ Watchlist"}
               </button>
 
               <button
-                className="secondary-btn"
+                className={
+                  watchlistStatus === "watched"
+                    ? "secondary-btn action-complete"
+                    : "secondary-btn"
+                }
                 onClick={() => addToWatchlist("watched")}
               >
-                ✓ Watched
+                {watchlistStatus === "watched" ? "✓ Watched" : "Mark Watched"}
               </button>
 
               <button
-                className="secondary-btn"
+                className={
+                  topListId
+                    ? "secondary-btn action-complete"
+                    : "secondary-btn"
+                }
                 onClick={addToTopList}
               >
-                ★ Top Series
+                {topListId ? "✓ In Top List" : "★ Top List"}
               </button>
+
+              {topListId && (
+                <button
+                  className="secondary-btn remove-toplist-btn"
+                  onClick={removeFromTopList}
+                >
+                  Remove Top List
+                </button>
+              )}
             </div>
           </div>
         </motion.div>
@@ -269,7 +573,7 @@ function SeriesDetails() {
 
       <nav className="movie-subnav">
         <div className="container movie-subnav-content">
-          {["overview", "episodes", "discussions", "reviews"].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               className={activeTab === tab ? "active-movie-tab" : ""}
@@ -293,7 +597,7 @@ function SeriesDetails() {
                 <div className="main-feature-grid">
                   <div>
                     <strong>Status</strong>
-                    <span>Returning / Released</span>
+                    <span>{tmdbDetails.status || "Unknown"}</span>
                   </div>
 
                   <div>
@@ -307,8 +611,12 @@ function SeriesDetails() {
                   </div>
 
                   <div>
-                    <strong>Type</strong>
-                    <span>Series</span>
+                    <strong>Episodes</strong>
+                    <span>
+                      {tmdbDetails.number_of_episodes ||
+                        displayEpisodes.length ||
+                        "Unknown"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -320,47 +628,92 @@ function SeriesDetails() {
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rate) => (
                     <button
                       key={rate}
-                      className="rating-pill"
+                      className={
+                        userRating === rate
+                          ? "rating-pill active-rating"
+                          : "rating-pill"
+                      }
                       onClick={() => saveRating(rate)}
                     >
                       {rate}
                     </button>
                   ))}
                 </div>
+
+                {userRating && (
+                  <button
+                    className="remove-rating-btn"
+                    onClick={deleteRating}
+                  >
+                    Remove rating
+                  </button>
+                )}
               </div>
             </>
           )}
 
           {activeTab === "episodes" && (
             <div className="details-panel">
-              <h2>Episode Management</h2>
+              <h2>{currentSeason?.name || `Season ${activeSeason}`}</h2>
 
               <div className="season-tabs">
                 {seasons.map((season) => (
                   <button
-                    key={season}
-                    className={activeSeason === season ? "active-season" : ""}
-                    onClick={() => setActiveSeason(season)}
+                    key={season.id || season.season_number}
+                    className={
+                      activeSeason === season.season_number
+                        ? "active-season"
+                        : ""
+                    }
+                    onClick={() => setActiveSeason(season.season_number)}
                   >
-                    Season {season}
+                    Season {season.season_number}
                   </button>
                 ))}
               </div>
 
+              {displayEpisodes.length === 0 ? (
+                <div className="empty-state">
+                  <h2>No episodes found</h2>
+                  <p>TMDB episode data is not available for this season.</p>
+                </div>
+              ) : (
               <div className="episodes-list">
-                {[1, 2, 3, 4, 5].map((episodeNumber) => {
-                  const savedEpisode = getSavedEpisode(episodeNumber);
+                {displayEpisodes.map((episode) => {
+                  const episodeNumber = episode.episode_number;
+                  const savedEpisode = getSavedEpisode(
+                    episodeNumber
+                  );
+                  const episodeTitle =
+                    savedEpisode?.title ||
+                    episode.title ||
+                    `Episode ${episode.episode_number}`;
 
                   return (
-                    <div className="episode-card" key={episodeNumber}>
+                    <div
+                      className="episode-card"
+                      key={episode.id || episode.episode_number}
+                    >
                       <div>
                         <span>
                           Season {activeSeason} • Episode {episodeNumber}
                         </span>
 
                         <h3>
-                          {savedEpisode?.title || `Episode ${episodeNumber}`}
+                          {episodeTitle}
                         </h3>
+
+                        {episode.air_date && (
+                          <p className="episode-comment">
+                            Air date: {episode.air_date}
+                          </p>
+                        )}
+
+                        {episode.overview && (
+                          <p className="details-description">
+                            {episode.overview}
+                          </p>
+                        )}
 
                         {savedEpisode?.comment && (
                           <p className="episode-comment">
@@ -370,14 +723,16 @@ function SeriesDetails() {
                       </div>
 
                       <div className="episode-actions">
-                        <button onClick={() => saveEpisode(episodeNumber)}>
-                          ✓ Save Episode
-                        </button>
-
                         <button
-                          onClick={() => saveEpisode(episodeNumber, true)}
+                          onClick={() =>
+                            saveEpisode(
+                              episode.episode_number,
+                              true,
+                              episodeTitle
+                            )
+                          }
                         >
-                          ★ Favorite
+                          Save as Favorite
                         </button>
                       </div>
 
@@ -385,11 +740,11 @@ function SeriesDetails() {
                         placeholder="Add comment for this episode..."
                         value={
                           episodeComments[
-                            `${activeSeason}-${episodeNumber}`
+                            `${activeSeason}-${episode.episode_number}`
                           ] || ""
                         }
                         onChange={(event) => {
-                          const commentKey = `${activeSeason}-${episodeNumber}`;
+                          const commentKey = `${activeSeason}-${episode.episode_number}`;
 
                           setEpisodeComments((current) => ({
                             ...current,
@@ -401,6 +756,149 @@ function SeriesDetails() {
                   );
                 })}
               </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "favorites" && (
+            <div className="details-panel">
+              <h2>Favorite Episodes</h2>
+
+              {favoriteEpisodes.length === 0 ? (
+                <div className="empty-state">
+                  <h2>No favorite episodes yet</h2>
+                  <p>
+                    Mark episodes as favorite and add a comment to build your
+                    personal list for this series.
+                  </p>
+                </div>
+              ) : (
+                <div className="episodes-list">
+                  {favoriteEpisodes.map((episode) => (
+                    <div className="episode-card" key={episode.id}>
+                      <span>
+                        {series.title} - Season {episode.season_number},
+                        Episode {episode.episode_number}
+                      </span>
+
+                      <h3>{episode.title}</h3>
+
+                      {editingEpisodeId === episode.id ? (
+                        <>
+                          <textarea
+                            placeholder="Edit your comment..."
+                            value={editingEpisodeComment}
+                            onChange={(event) =>
+                              setEditingEpisodeComment(event.target.value)
+                            }
+                          ></textarea>
+
+                          <div className="episode-actions">
+                            <button
+                              onClick={() => saveFavoriteEdit(episode)}
+                            >
+                              Save Changes
+                            </button>
+
+                            <button onClick={cancelEditingFavorite}>
+                              Cancel
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {episode.comment ? (
+                            <p className="episode-comment">
+                              {episode.comment}
+                            </p>
+                          ) : (
+                            <p className="episode-comment">
+                              No comment saved for this favorite episode.
+                            </p>
+                          )}
+
+                          <div className="episode-actions">
+                            <button
+                              onClick={() => startEditingFavorite(episode)}
+                            >
+                              Edit Comment
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                deleteFavoriteEpisode(episode.id)
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "cast" && (
+            <div className="details-panel">
+              <h2>Cast</h2>
+
+              {tmdbDetails.cast.length === 0 ? (
+                <div className="empty-state">
+                  <h2>No cast found</h2>
+                  <p>TMDB cast data is not available for this series.</p>
+                </div>
+              ) : (
+                <div className="cast-grid">
+                  {tmdbDetails.cast.map((person) => (
+                    <div className="cast-card" key={person.id}>
+                      {person.profile_url && (
+                        <img src={person.profile_url} alt={person.name} />
+                      )}
+
+                      <h3>{person.name}</h3>
+                      <p>{person.character || "Cast member"}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "awards" && (
+            <div className="details-panel">
+              <h2>Awards</h2>
+
+              <div className="empty-state">
+                <h2>No awards found</h2>
+                <p>
+                  {tmdbDetails.awardsMessage ||
+                    "Awards are not available for this series."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "media" && (
+            <div className="details-panel">
+              <h2>Media</h2>
+
+              {tmdbDetails.trailer_url ? (
+                <div className="trailer-box">
+                  <iframe
+                    src={tmdbDetails.trailer_url}
+                    title={`${series.title} trailer`}
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <h2>No trailer found</h2>
+                  <p>TMDB media data is not available for this series.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -426,13 +924,91 @@ function SeriesDetails() {
               </div>
 
               <div className="discussion-list">
-                {discussions.map((discussion) => (
-                  <div className="discussion-card" key={discussion.id}>
-                    <h3>{discussion.title}</h3>
-                    <p>{discussion.body}</p>
-                    <span>Posted by {discussion.username}</span>
+                {discussions.length === 0 ? (
+                  <div className="discussion-empty">
+                    <h3>No discussions yet</h3>
+                    <p>Start the first conversation about this series.</p>
                   </div>
-                ))}
+                ) : (
+                  discussions.map((discussion) => {
+                    const canManageDiscussion =
+                      Number(user?.id) === Number(discussion.user_id) ||
+                      user?.role === "admin";
+                    const isEditing =
+                      editingDiscussionId === discussion.id;
+
+                    return (
+                      <div className="discussion-card" key={discussion.id}>
+                        {isEditing ? (
+                          <div className="discussion-edit-form">
+                            <input
+                              type="text"
+                              value={editingDiscussionTitle}
+                              onChange={(event) =>
+                                setEditingDiscussionTitle(event.target.value)
+                              }
+                            />
+
+                            <textarea
+                              value={editingDiscussionBody}
+                              onChange={(event) =>
+                                setEditingDiscussionBody(event.target.value)
+                              }
+                            ></textarea>
+
+                            <div className="discussion-actions">
+                              <button
+                                onClick={() => updateDiscussion(discussion.id)}
+                              >
+                                Save
+                              </button>
+
+                              <button
+                                className="discussion-ghost-btn"
+                                onClick={cancelEditingDiscussion}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="discussion-card-top">
+                              <div>
+                                <h3>{discussion.title}</h3>
+                                <span>Posted by {discussion.username}</span>
+                              </div>
+
+                              {canManageDiscussion && (
+                                <div className="discussion-actions">
+                                  <button
+                                    className="discussion-ghost-btn"
+                                    onClick={() =>
+                                      startEditingDiscussion(discussion)
+                                    }
+                                  >
+                                    Edit
+                                  </button>
+
+                                  <button
+                                    className="discussion-danger-btn"
+                                    onClick={() =>
+                                      deleteDiscussion(discussion.id)
+                                    }
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            <p>{discussion.body}</p>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -448,6 +1024,17 @@ function SeriesDetails() {
                 onChange={(event) => setReviewText(event.target.value)}
               ></textarea>
 
+              <label className="privacy-toggle">
+                <input
+                  type="checkbox"
+                  checked={reviewIsPublic}
+                  onChange={(event) =>
+                    setReviewIsPublic(event.target.checked)
+                  }
+                />
+                <span>{reviewIsPublic ? "Public review" : "Private review"}</span>
+              </label>
+
               <button
                 className="save-note-btn"
                 onClick={submitReview}
@@ -455,15 +1042,101 @@ function SeriesDetails() {
                 Save Review
               </button>
 
-              {reviews.map((review) => (
-                <div className="review-card" key={review.id}>
-                  <div className="review-top">
-                    <strong>{review.username}</strong>
+              <div className="review-list">
+                {reviews.length === 0 ? (
+                  <div className="discussion-empty">
+                    <h3>No reviews yet</h3>
+                    <p>Share your opinion about this series.</p>
                   </div>
+                ) : (
+                  reviews.map((review) => {
+                    const canManageReview =
+                      Number(user?.id) === Number(review.user_id) ||
+                      user?.role === "admin";
+                    const isEditing = editingReviewId === review.id;
 
-                  <p>{review.review_text}</p>
-                </div>
-              ))}
+                    return (
+                      <div className="review-card" key={review.id}>
+                        {isEditing ? (
+                          <div className="review-edit-form">
+                            <textarea
+                              value={editingReviewText}
+                              onChange={(event) =>
+                                setEditingReviewText(event.target.value)
+                              }
+                            ></textarea>
+
+                            <label className="privacy-toggle">
+                              <input
+                                type="checkbox"
+                                checked={editingReviewIsPublic}
+                                onChange={(event) =>
+                                  setEditingReviewIsPublic(event.target.checked)
+                                }
+                              />
+                              <span>
+                                {editingReviewIsPublic
+                                  ? "Public review"
+                                  : "Private review"}
+                              </span>
+                            </label>
+
+                            <div className="review-actions">
+                              <button onClick={() => updateReview(review.id)}>
+                                Save
+                              </button>
+
+                              <button
+                                className="review-ghost-btn"
+                                onClick={cancelEditingReview}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="review-card-top">
+                              <div className="review-top">
+                                <strong>{review.username}</strong>
+                                <span
+                                  className={
+                                    review.is_public
+                                      ? "review-badge public"
+                                      : "review-badge private"
+                                  }
+                                >
+                                  {review.is_public ? "Public" : "Private"}
+                                </span>
+                              </div>
+
+                              {canManageReview && (
+                                <div className="review-actions">
+                                  <button
+                                    className="review-ghost-btn"
+                                    onClick={() => startEditingReview(review)}
+                                  >
+                                    Edit
+                                  </button>
+
+                                  <button
+                                    className="review-danger-btn"
+                                    onClick={() => deleteReview(review.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            <p>{review.review_text}</p>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -483,6 +1156,16 @@ function SeriesDetails() {
             <p>
               <strong>Type:</strong> Series
             </p>
+
+            <p>
+              <strong>Seasons:</strong>{" "}
+              {tmdbDetails.number_of_seasons || seasons.length || "Unknown"}
+            </p>
+
+            <p>
+              <strong>Episodes:</strong>{" "}
+              {tmdbDetails.number_of_episodes || "Unknown"}
+            </p>
           </div>
 
           <div className="sidebar-card">
@@ -496,10 +1179,10 @@ function SeriesDetails() {
           </div>
 
           <div className="sidebar-card">
-            <h3>Saved Episodes</h3>
+            <h3>Favorite Episodes</h3>
 
             <p>
-              <strong>{episodes.length}</strong> saved/favorite episodes
+              <strong>{favoriteEpisodes.length}</strong> favorite episodes
             </p>
           </div>
         </aside>
@@ -509,3 +1192,4 @@ function SeriesDetails() {
 }
 
 export default SeriesDetails;
+
