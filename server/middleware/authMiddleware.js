@@ -24,8 +24,25 @@ function protect(req, res, next) {
   }
 }
 
+function attachUserIfAuthenticated(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return next();
+    }
+
+    const token = authHeader.split(" ")[1];
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+
+    next();
+  } catch {
+    next();
+  }
+}
+
 function adminOnly(req, res, next) {
-  if (req.user.role !== "admin") {
+  if (!req.user || req.user.role !== "admin") {
     return res.status(403).json({
       message: "Access denied. Admin only.",
     });
@@ -36,5 +53,6 @@ function adminOnly(req, res, next) {
 
 module.exports = {
   protect,
+  attachUserIfAuthenticated,
   adminOnly,
 };

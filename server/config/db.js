@@ -12,7 +12,18 @@ pool.connect()
   .then((client) => {
     console.log("PostgreSQL connected");
     client.release();
+
+    return pool.query(`
+      ALTER TABLE reviews
+      ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT true
+    `);
   })
-  .catch((err) => console.log(err));
+  .then(() => {
+    console.log("Review visibility column ready");
+  })
+  .catch((err) => {
+  console.error("Failed to connect to DB:", err);
+  process.exit(1);  
+});
 
 module.exports = pool;
