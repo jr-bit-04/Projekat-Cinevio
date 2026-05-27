@@ -37,15 +37,17 @@ async function ensureContentRequestsTable() {
   tableReady = true;
 }
 
-function validateContentRequest(body) {
-  return (
-    isNonEmptyString(body.title) &&
-    ["movie", "series"].includes(body.type) &&
-    isNonEmptyString(body.description) &&
-    isPositiveInteger(body.release_year) &&
-    isNonEmptyString(body.genre) &&
-    isRating(body.rating)
-  );
+function getMissingContentFields(body) {
+  const missing = [];
+
+  if (!isNonEmptyString(body.title)) missing.push("Title");
+  if (!["movie", "series"].includes(body.type)) missing.push("Type");
+  if (!isNonEmptyString(body.description)) missing.push("Description");
+  if (!isPositiveInteger(body.release_year)) missing.push("Release year");
+  if (!isNonEmptyString(body.genre)) missing.push("Genre");
+  if (!isRating(body.rating)) missing.push("Rating (0–10)");
+
+  return missing;
 }
 
 function buildContentValues(body) {
@@ -66,10 +68,11 @@ async function createContentRequest(req, res) {
   try {
     await ensureContentRequestsTable();
 
-    if (!validateContentRequest(req.body)) {
+    const missing = getMissingContentFields(req.body);
+
+    if (missing.length > 0) {
       return res.status(400).json({
-        message:
-          "title, type, description, release_year, genre and rating are required",
+        message: `Please fill in correctly: ${missing.join(", ")}`,
       });
     }
 
