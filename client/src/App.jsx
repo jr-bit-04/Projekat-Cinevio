@@ -13,6 +13,9 @@ import SeriesDetails from "./pages/SeriesDetails";
 import Profile from "./pages/Profile";
 import Recommendations from "./pages/Recommendations";
 import Details from "./pages/Details";
+import NotFound from "./pages/NotFound";
+import ContentRequest from "./pages/ContentRequest";
+import AdminUsers from "./pages/AdminUsers";
 
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -90,6 +93,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/request-content"
+          element={
+            <ProtectedRoute>
+              <ContentRequest />
+            </ProtectedRoute>
+          }
+        />
+
         {/* ADMIN ROUTE */}
 
         <Route
@@ -100,6 +112,17 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
     </BrowserRouter>
