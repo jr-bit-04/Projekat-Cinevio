@@ -32,8 +32,13 @@ pool.connect()
     console.log("Review visibility column ready");
   })
   .catch((err) => {
-  console.error("Failed to connect to DB:", err);
-  process.exit(1);  
+    if (err.code === "42P01") {
+      console.warn("Database schema is not initialized yet:", err.message);
+      return;
+    }
+
+    console.error("Failed to connect to DB:", err);
+    process.exit(1);
 });
 
 module.exports = pool;

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "db:init": "node scripts/initSchema.js",
     "backfill:genres": "node scripts/backfillGenres.js"
   },
   "keywords": [],
