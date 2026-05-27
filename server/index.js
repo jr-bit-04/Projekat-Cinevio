@@ -18,8 +18,16 @@ const episodeRoutes = require("./routes/episodeRoutes");
 const contentRequestRoutes = require("./routes/contentRequestRoutes");
 
 const app = express();
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(",").map((origin) => origin.trim())
+  : true;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
