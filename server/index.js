@@ -15,6 +15,7 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const tmdbRoutes = require("./routes/tmdbRoutes");
 const recommendationRoutes = require("./routes/recommendationRoutes");
 const episodeRoutes = require("./routes/episodeRoutes");
+const contentRequestRoutes = require("./routes/contentRequestRoutes");
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/tmdb", tmdbRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/episodes", episodeRoutes);
+app.use("/api/content-requests", contentRequestRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Cinevio API running" });
