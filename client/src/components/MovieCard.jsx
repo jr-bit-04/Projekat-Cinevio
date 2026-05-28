@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
+const posterFallback = "/placeholder.svg";
+
 function MovieCard({ movie }) {
   const detailsPath =
   movie.type === "Series"
@@ -22,7 +24,7 @@ function MovieCard({ movie }) {
         }}
       >
         <div className="movie-poster-wrap">
-          <img src={movie.image} alt={movie.title} />
+          <img src={movie.image || posterFallback} alt={movie.title} />
 
           <div className="movie-card-badge">⭐ {movie.rating}</div>
         </div>

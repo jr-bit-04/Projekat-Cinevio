@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Missing poster placeholder</title>
+  <desc id="desc">A neutral movie poster placeholder used when no poster image is available.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171923"/>
+      <stop offset="1" stop-color="#2d3748"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="900" fill="url(#bg)"/>
+  <rect x="60" y="72" width="480" height="756" rx="28" fill="none" stroke="#718096" stroke-width="10" opacity=".55"/>
+  <path d="M178 344h244v176H178z" fill="#4a5568" opacity=".62"/>
+  <path d="M244 390v84l82-42z" fill="#cbd5e0"/>
+  <text x="300" y="612" fill="#e2e8f0" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" text-anchor="middle">No poster</text>
+  <text x="300" y="668" fill="#a0aec0" font-family="Arial, Helvetica, sans-serif" font-size="28" text-anchor="middle">Image unavailable</text>
+</svg>
