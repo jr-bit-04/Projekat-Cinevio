@@ -2468,6 +2468,68 @@ button:active {
   color: white;
 }
 
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.password-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.password-form label span {
+  color: var(--muted-2);
+  font-weight: 800;
+}
+
+.password-form input {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(184,146,255,0.18);
+  background: rgba(10,10,20,0.55);
+  color: white;
+}
+
+.password-form input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 4px rgba(184,146,255,0.12);
+  outline: none;
+}
+
+.password-form button {
+  margin-top: 6px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  transition: transform 0.2s ease;
+}
+
+.password-form button:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+
+.password-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: #ff8080;
+  font-weight: 700;
+}
+
+.form-success {
+  color: #7be3a3;
+  font-weight: 700;
+}
+
 @media (max-width: 900px) {
   .profile-grid {
     grid-template-columns: 1fr;

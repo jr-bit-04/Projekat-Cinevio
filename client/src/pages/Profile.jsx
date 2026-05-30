@@ -5,6 +5,12 @@ import api from "../services/api";
 
 function Profile() {
   const [profile, setProfile] = useState(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
 
   async function fetchProfile() {
     try {
@@ -12,6 +18,48 @@ function Profile() {
       setProfile(res.data);
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  async function handleChangePassword(event) {
+    event.preventDefault();
+
+    setPasswordMessage("");
+    setPasswordError("");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("All fields are required.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation do not match.");
+      return;
+    }
+
+    setPasswordBusy(true);
+
+    try {
+      const res = await api.put("/users/password", {
+        currentPassword,
+        newPassword,
+      });
+
+      setPasswordMessage(res.data.message || "Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      setPasswordError(
+        error.response?.data?.message || "Could not update password."
+      );
+    } finally {
+      setPasswordBusy(false);
     }
   }
 
@@ -98,6 +146,54 @@ function Profile() {
               <span>Status</span>
               <strong>Active</strong>
             </div>
+          </div>
+
+          <div className="profile-panel">
+            <h2>Change Password</h2>
+
+            <form className="password-form" onSubmit={handleChangePassword}>
+              <label>
+                <span>Current password</span>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  placeholder="Enter current password"
+                />
+              </label>
+
+              <label>
+                <span>New password</span>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  placeholder="At least 6 characters"
+                />
+              </label>
+
+              <label>
+                <span>Confirm new password</span>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Repeat new password"
+                />
+              </label>
+
+              {passwordError && (
+                <p className="form-error">{passwordError}</p>
+              )}
+
+              {passwordMessage && (
+                <p className="form-success">{passwordMessage}</p>
+              )}
+
+              <button type="submit" disabled={passwordBusy}>
+                {passwordBusy ? "Updating..." : "Update Password"}
+              </button>
+            </form>
           </div>
         </div>
       </section>
