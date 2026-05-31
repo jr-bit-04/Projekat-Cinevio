@@ -3,6 +3,7 @@ const express = require("express");
 const {
   createContent,
   getAllContent,
+  getTrendingContent,
   getSingleContent,
   updateContent,
   deleteContent,
@@ -16,6 +17,8 @@ const router = express.Router();
 router.get("/", getAllContent);
 
 router.get("/search", searchContent);
+
+router.get("/trending", getTrendingContent);
 
 router.get("/:id", getSingleContent);
 

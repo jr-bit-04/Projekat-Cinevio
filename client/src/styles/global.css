@@ -846,18 +846,26 @@ button {
 
 .score-actions-row {
   align-items: center;
-  gap: 28px;
-  margin-top: 34px;
+  gap: 24px;
+  margin-top: 26px;
+}
+
+.score-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px;
 }
 
 .user-score {
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .score-circle {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
+  font-size: 0.9rem;
   border-radius: 50%;
   background:
     radial-gradient(circle, #10101f 54%, transparent 56%),
@@ -868,6 +876,13 @@ button {
   color: white;
   font-weight: 900;
   animation: pulseGlow 4s infinite ease-in-out;
+}
+
+.score-circle-empty {
+  animation: none;
+  color: var(--muted-2);
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
 }
 
 @keyframes pulseGlow {
@@ -2692,6 +2707,11 @@ button:active {
   font-weight: 900;
   font-size: 1rem;
   box-shadow: 0 12px 28px rgba(184,146,255,0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
 }
 
 .user-dropdown {

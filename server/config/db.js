@@ -1,9 +1,21 @@
 const { Pool } = require("pg");
 
+// SSL ponašanje zadajemo eksplicitno preko `ssl` opcije ispod, pa uklanjamo
+// `sslmode` iz connection stringa kako pg ne bi ispisivao deprecation warning.
+function stripSslMode(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.delete("sslmode");
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 const pool = new Pool(
   process.env.DATABASE_URL
     ? {
-        connectionString: process.env.DATABASE_URL,
+        connectionString: stripSslMode(process.env.DATABASE_URL),
         ssl:
           process.env.DB_SSL === "false"
             ? false

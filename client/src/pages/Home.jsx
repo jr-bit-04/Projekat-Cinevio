@@ -15,23 +15,30 @@ function Home() {
     fetchContent();
   }, []);
 
+  // mapiramo u oblik koji MovieCard očekuje
+  function mapContent(item) {
+    return {
+      id: item.id,                                    // PRAVI id iz baze
+      title: item.title,
+      type: item.type === "series" ? "Series" : "Movie",
+      year: String(item.release_year),
+      rating: item.rating,
+      image: item.poster_url,                         // PRAVA slika iz baze
+    };
+  }
+
   async function fetchContent() {
     try {
+      // Featured ostaje od najnovijeg sadržaja
       const res = await api.get("/content");
-
-      // mapiramo u oblik koji MovieCard očekuje
-      const mapped = res.data.map((item) => ({
-        id: item.id,                                    // PRAVI id iz baze
-        title: item.title,
-        type: item.type === "series" ? "Series" : "Movie",
-        year: String(item.release_year),
-        rating: item.rating,
-        image: item.poster_url,                         // PRAVA slika iz baze
-      }));
-
-      // npr. prvih 3 kao "Featured", sledeća 3 kao "Trending"
+      const mapped = res.data.map(mapContent);
       setFeaturedMovies(mapped.slice(0, 3));
-      setTrendingMovies(mapped.slice(3, 6));
+
+      // Trending = sadržaj sa najviše korisničkih interakcija (watched / watchlist)
+      const trendingRes = await api.get("/content/trending", {
+        params: { limit: 3 },
+      });
+      setTrendingMovies(trendingRes.data.map(mapContent));
     } catch (error) {
       console.log(error);
     }

@@ -102,6 +102,58 @@ async function getAllContent(req, res) {
   }
 }
 
+async function getTrendingContent(req, res) {
+  try {
+    const limit = isPositiveInteger(req.query.limit)
+      ? Math.min(Number(req.query.limit), 50)
+      : 12;
+
+    const result = await db.query(
+      `
+      SELECT
+        content.*,
+        COALESCE(w.watched_count, 0) AS watched_count,
+        COALESCE(w.interaction_count, 0) AS interaction_count,
+        COALESCE(r.rating_count, 0) AS rating_count,
+        COALESCE(r.avg_user_rating, 0) AS avg_user_rating
+      FROM content
+      LEFT JOIN (
+        SELECT
+          content_id,
+          COUNT(*) FILTER (WHERE status = 'watched') AS watched_count,
+          COUNT(*) AS interaction_count
+        FROM watchlist
+        GROUP BY content_id
+      ) w ON w.content_id = content.id
+      LEFT JOIN (
+        SELECT
+          content_id,
+          COUNT(*) AS rating_count,
+          AVG(rating) AS avg_user_rating
+        FROM user_ratings
+        GROUP BY content_id
+      ) r ON r.content_id = content.id
+      ORDER BY
+        (
+          COALESCE(w.watched_count, 0) * 3 +
+          COALESCE(w.interaction_count, 0) * 1 +
+          COALESCE(r.rating_count, 0) * 2
+        ) DESC,
+        COALESCE(r.avg_user_rating, 0) DESC,
+        content.rating DESC,
+        content.created_at DESC
+      LIMIT $1
+      `,
+      [limit]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
 async function getSingleContent(req, res) {
   try {
     const { id } = req.params;
@@ -309,6 +361,7 @@ async function searchContent(req, res) {
 module.exports = {
   createContent,
   getAllContent,
+  getTrendingContent,
   getSingleContent,
   updateContent,
   deleteContent,

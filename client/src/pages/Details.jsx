@@ -14,6 +14,7 @@ function Details() {
   const [activeTab, setActiveTab] = useState("main");
   const [movie, setMovie] = useState(null);
   const [userRating, setUserRating] = useState(null);
+  const [ratingStats, setRatingStats] = useState({ average: 0, count: 0 });
   const [watchlistStatus, setWatchlistStatus] = useState(null);
   const [topListId, setTopListId] = useState(null);
 
@@ -51,6 +52,7 @@ function Details() {
     fetchMovie();
     fetchMovieExtras();
     fetchUserRating();
+    fetchRatingStats();
     fetchReviews();
     fetchDiscussions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,6 +159,22 @@ function Details() {
     }
   }
 
+  function scoreCircleStyle(percent) {
+    const value = Math.max(0, Math.min(100, percent));
+    return {
+      background: `radial-gradient(circle, #10101f 54%, transparent 56%), conic-gradient(var(--purple) ${value}%, #2a2a44 0)`,
+    };
+  }
+
+  async function fetchRatingStats() {
+    try {
+      const res = await api.get(`/ratings/stats/${id}`);
+      setRatingStats(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async function saveRating(rate) {
     try {
       await api.post("/ratings", {
@@ -166,6 +184,7 @@ function Details() {
 
       setUserRating(rate);
       toast.success(`You rated ${rate}/10`);
+      fetchRatingStats();
     } catch (error) {
       console.log(error);
       toast.error("Rating failed");
@@ -177,6 +196,7 @@ function Details() {
       await api.delete(`/ratings/${movie.id}`);
       setUserRating(null);
       toast.success("Rating removed");
+      fetchRatingStats();
     } catch (error) {
       console.log(error);
       toast.error("Failed to remove rating");
@@ -415,13 +435,50 @@ function Details() {
             </p>
 
             <div className="score-actions-row">
-              <div className="user-score">
-                <div className="score-circle">
-                  {Math.round(movie.rating * 10)}%
+              <div className="score-group">
+                <div className="user-score">
+                  <div
+                    className="score-circle"
+                    style={scoreCircleStyle(Math.round(movie.rating * 10))}
+                  >
+                    {Math.round(movie.rating * 10)}%
+                  </div>
+
+                  <p>TMDB Rating</p>
                 </div>
 
-                <p>User Score</p>
+                <div className="user-score">
+                  <div
+                    className={
+                      ratingStats.count > 0
+                        ? "score-circle"
+                        : "score-circle score-circle-empty"
+                    }
+                    style={scoreCircleStyle(
+                      ratingStats.count > 0
+                        ? Math.round(ratingStats.average * 10)
+                        : 0
+                    )}
+                  >
+                    {ratingStats.count > 0
+                      ? `${Math.round(ratingStats.average * 10)}%`
+                      : "NR"}
+                  </div>
+
+                  <p>
+                    Cinevio Score
+                    <span>
+                      {" "}
+                      {ratingStats.count > 0
+                        ? `(${ratingStats.count} ${
+                            ratingStats.count === 1 ? "vote" : "votes"
+                          })`
+                        : "(no ratings yet)"}
+                    </span>
+                  </p>
+                </div>
               </div>
+
               <div className="details-actions">
                 <button
                   className={

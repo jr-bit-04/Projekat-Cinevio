@@ -86,6 +86,39 @@ async function getMyContentRating(req, res) {
   }
 }
 
+async function getContentRatingStats(req, res) {
+  try {
+    const { contentId } = req.params;
+
+    if (!isPositiveInteger(contentId)) {
+      return res.status(400).json({
+        message: "Valid contentId is required",
+      });
+    }
+
+    const result = await db.query(
+      `
+      SELECT
+        COALESCE(AVG(rating), 0) AS average,
+        COUNT(*) AS count
+      FROM user_ratings
+      WHERE content_id = $1
+      `,
+      [Number(contentId)]
+    );
+
+    const row = result.rows[0];
+
+    res.json({
+      average: Number(row.average),
+      count: Number(row.count),
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
 async function deleteMyContentRating(req, res) {
   try {
     const userId = req.user.id;
@@ -122,5 +155,6 @@ module.exports = {
   rateContent,
   getMyRatings,
   getMyContentRating,
+  getContentRatingStats,
   deleteMyContentRating,
 };
