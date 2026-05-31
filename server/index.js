@@ -16,6 +16,7 @@ const tmdbRoutes = require("./routes/tmdbRoutes");
 const recommendationRoutes = require("./routes/recommendationRoutes");
 const episodeRoutes = require("./routes/episodeRoutes");
 const contentRequestRoutes = require("./routes/contentRequestRoutes");
+const activityRoutes = require("./routes/activityRoutes");
 
 const app = express();
 const allowedOrigins = process.env.CLIENT_URL
@@ -43,6 +44,7 @@ app.use("/api/tmdb", tmdbRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/episodes", episodeRoutes);
 app.use("/api/content-requests", contentRequestRoutes);
+app.use("/api/activity", activityRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Cinevio API running" });

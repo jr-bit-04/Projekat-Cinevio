@@ -16,6 +16,7 @@ import Details from "./pages/Details";
 import NotFound from "./pages/NotFound";
 import ContentRequest from "./pages/ContentRequest";
 import AdminUsers from "./pages/AdminUsers";
+import AdminActivity from "./pages/AdminActivity";
 
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -50,6 +51,7 @@ function App() {
 
         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute adminOnly={true}><AdminUsers /></ProtectedRoute>} />
+        <Route path="/admin/activity" element={<ProtectedRoute adminOnly={true}><AdminActivity /></ProtectedRoute>} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

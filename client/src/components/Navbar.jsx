@@ -70,6 +70,7 @@ function Navbar() {
                     <>
                       <Link to="/admin">Admin Panel</Link>
                       <Link to="/admin/users">Users</Link>
+                      <Link to="/admin/activity">Activity</Link>
                     </>
                   )}
 
