@@ -250,13 +250,13 @@ function SeriesDetails() {
         is_public: reviewIsPublic,
       });
 
-      toast.success("Review posted");
+      toast.success("Note posted");
       setReviewText("");
       setReviewIsPublic(true);
       fetchReviews();
     } catch (error) {
       console.log(error);
-      toast.error("Failed to post review");
+      toast.error("Failed to post note");
     }
   }
 
@@ -281,27 +281,27 @@ function SeriesDetails() {
         is_public: editingReviewIsPublic,
       });
 
-      toast.success("Review updated");
+      toast.success("Note updated");
       cancelEditingReview();
       fetchReviews();
     } catch (error) {
       console.log(error);
-      toast.error("Failed to update review");
+      toast.error("Failed to update note");
     }
   }
 
   async function deleteReview(reviewId) {
-    const confirmed = window.confirm("Delete this review?");
+    const confirmed = window.confirm("Delete this note?");
 
     if (!confirmed) return;
 
     try {
       await api.delete(`/reviews/${reviewId}`);
-      toast.success("Review deleted");
+      toast.success("Note deleted");
       fetchReviews();
     } catch (error) {
       console.log(error);
-      toast.error("Failed to delete review");
+      toast.error("Failed to delete note");
     }
   }
 
@@ -475,7 +475,7 @@ function SeriesDetails() {
     "awards",
     "media",
     "discussions",
-    "reviews",
+    "notes",
   ];
 
   return (
@@ -1013,13 +1013,13 @@ function SeriesDetails() {
             </div>
           )}
 
-          {activeTab === "reviews" && (
+          {activeTab === "notes" && (
             <div className="details-panel">
-              <h2>Reviews</h2>
+              <h2>Notes</h2>
 
               <textarea
                 className="note-textarea"
-                placeholder="Write your review about this series..."
+                placeholder="Write your note about this series..."
                 value={reviewText}
                 onChange={(event) => setReviewText(event.target.value)}
               ></textarea>
@@ -1032,20 +1032,20 @@ function SeriesDetails() {
                     setReviewIsPublic(event.target.checked)
                   }
                 />
-                <span>{reviewIsPublic ? "Public review" : "Private review"}</span>
+                <span>{reviewIsPublic ? "Public note" : "Private note"}</span>
               </label>
 
               <button
                 className="save-note-btn"
                 onClick={submitReview}
               >
-                Save Review
+                Save Note
               </button>
 
               <div className="review-list">
                 {reviews.length === 0 ? (
                   <div className="discussion-empty">
-                    <h3>No reviews yet</h3>
+                    <h3>No notes yet</h3>
                     <p>Share your opinion about this series.</p>
                   </div>
                 ) : (
@@ -1076,8 +1076,8 @@ function SeriesDetails() {
                               />
                               <span>
                                 {editingReviewIsPublic
-                                  ? "Public review"
-                                  : "Private review"}
+                                  ? "Public note"
+                                  : "Private note"}
                               </span>
                             </label>
 
