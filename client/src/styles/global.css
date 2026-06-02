@@ -1966,6 +1966,32 @@ button:active {
   transform: none;
 }
 
+.top-list-item[draggable="true"] {
+  cursor: grab;
+}
+
+.top-list-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+  border-color: var(--border-strong);
+  transform: none;
+}
+
+.top-drag-handle {
+  font-size: 1.4rem;
+  letter-spacing: -3px;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(184,146,255,0.25);
+  user-select: none;
+}
+
+.top-list-item:hover .top-drag-handle {
+  color: var(--purple);
+}
+
 @media (max-width: 900px) {
   .watchlist-dashboard {
     grid-template-columns: 1fr;

@@ -7,6 +7,7 @@ import api from "../services/api";
 function TopMovies() {
   const [topMovies, setTopMovies] = useState([]);
   const [rankingBusy, setRankingBusy] = useState(false);
+  const [dragIndex, setDragIndex] = useState(null);
 
   async function fetchTopMovies() {
     try {
@@ -23,13 +24,7 @@ function TopMovies() {
     fetchTopMovies();
   }, []);
 
-  async function saveMovieRanking(nextMovies) {
-    const rankedMovies = nextMovies.map((movie, index) => ({
-      ...movie,
-      position: index + 1,
-    }));
-
-    setTopMovies(rankedMovies);
+  async function persistRanking(rankedMovies) {
     setRankingBusy(true);
 
     try {
@@ -50,24 +45,32 @@ function TopMovies() {
     }
   }
 
-  function moveMovie(index, direction) {
-    const nextIndex = index + direction;
+  function handleDragStart(index) {
+    if (rankingBusy) return;
+    setDragIndex(index);
+  }
 
-    if (
-      rankingBusy ||
-      nextIndex < 0 ||
-      nextIndex >= topMovies.length
-    ) {
-      return;
-    }
+  function handleDragEnter(index) {
+    if (dragIndex === null || dragIndex === index) return;
 
-    const nextMovies = [...topMovies];
-    const currentMovie = nextMovies[index];
+    setTopMovies((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(index, 0, moved);
 
-    nextMovies[index] = nextMovies[nextIndex];
-    nextMovies[nextIndex] = currentMovie;
+      return next.map((movie, i) => ({ ...movie, position: i + 1 }));
+    });
 
-    saveMovieRanking(nextMovies);
+    setDragIndex(index);
+  }
+
+  function handleDragEnd() {
+    setDragIndex(null);
+
+    setTopMovies((current) => {
+      persistRanking(current);
+      return current;
+    });
   }
 
   return (
@@ -80,7 +83,7 @@ function TopMovies() {
 
           <h1>Top Movies</h1>
 
-          <p>Your favorite movies, ranked by you.</p>
+          <p>Drag and drop to reorder your favorite movies.</p>
         </div>
 
         {topMovies.length === 0 ? (
@@ -91,7 +94,19 @@ function TopMovies() {
         ) : (
           <div className="top-list">
             {topMovies.map((movie, index) => (
-              <div className="top-list-item" key={movie.top_id}>
+              <div
+                className={
+                  dragIndex === index
+                    ? "top-list-item dragging"
+                    : "top-list-item"
+                }
+                key={movie.top_id}
+                draggable={!rankingBusy}
+                onDragStart={() => handleDragStart(index)}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragOver={(event) => event.preventDefault()}
+                onDragEnd={handleDragEnd}
+              >
                 <div className="top-position">
                   #{movie.position || index + 1}
                 </div>
@@ -102,20 +117,9 @@ function TopMovies() {
                 </Link>
 
                 <span>⭐ {movie.rating}</span>
-                <div className="top-rank-actions">
-                  <button
-                    onClick={() => moveMovie(index, -1)}
-                    disabled={rankingBusy || index === 0}
-                  >
-                    Up
-                  </button>
 
-                  <button
-                    onClick={() => moveMovie(index, 1)}
-                    disabled={rankingBusy || index === topMovies.length - 1}
-                  >
-                    Down
-                  </button>
+                <div className="top-drag-handle" title="Drag to reorder">
+                  ⋮⋮
                 </div>
               </div>
             ))}

@@ -7,6 +7,7 @@ import api from "../services/api";
 function TopSeries() {
   const [topSeries, setTopSeries] = useState([]);
   const [rankingBusy, setRankingBusy] = useState(false);
+  const [dragIndex, setDragIndex] = useState(null);
 
   async function fetchTopSeries() {
     try {
@@ -23,13 +24,7 @@ function TopSeries() {
     fetchTopSeries();
   }, []);
 
-  async function saveSeriesRanking(nextSeries) {
-    const rankedSeries = nextSeries.map((series, index) => ({
-      ...series,
-      position: index + 1,
-    }));
-
-    setTopSeries(rankedSeries);
+  async function persistRanking(rankedSeries) {
     setRankingBusy(true);
 
     try {
@@ -50,24 +45,32 @@ function TopSeries() {
     }
   }
 
-  function moveSeries(index, direction) {
-    const nextIndex = index + direction;
+  function handleDragStart(index) {
+    if (rankingBusy) return;
+    setDragIndex(index);
+  }
 
-    if (
-      rankingBusy ||
-      nextIndex < 0 ||
-      nextIndex >= topSeries.length
-    ) {
-      return;
-    }
+  function handleDragEnter(index) {
+    if (dragIndex === null || dragIndex === index) return;
 
-    const nextSeries = [...topSeries];
-    const currentSeries = nextSeries[index];
+    setTopSeries((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(index, 0, moved);
 
-    nextSeries[index] = nextSeries[nextIndex];
-    nextSeries[nextIndex] = currentSeries;
+      return next.map((series, i) => ({ ...series, position: i + 1 }));
+    });
 
-    saveSeriesRanking(nextSeries);
+    setDragIndex(index);
+  }
+
+  function handleDragEnd() {
+    setDragIndex(null);
+
+    setTopSeries((current) => {
+      persistRanking(current);
+      return current;
+    });
   }
 
   return (
@@ -80,7 +83,7 @@ function TopSeries() {
 
           <h1>Top Series</h1>
 
-          <p>Your favorite series, ranked by you.</p>
+          <p>Drag and drop to reorder your favorite series.</p>
         </div>
 
         {topSeries.length === 0 ? (
@@ -91,7 +94,19 @@ function TopSeries() {
         ) : (
           <div className="top-list">
             {topSeries.map((series, index) => (
-              <div className="top-list-item" key={series.top_id}>
+              <div
+                className={
+                  dragIndex === index
+                    ? "top-list-item dragging"
+                    : "top-list-item"
+                }
+                key={series.top_id}
+                draggable={!rankingBusy}
+                onDragStart={() => handleDragStart(index)}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragOver={(event) => event.preventDefault()}
+                onDragEnd={handleDragEnd}
+              >
                 <div className="top-position">
                   #{series.position || index + 1}
                 </div>
@@ -105,20 +120,9 @@ function TopSeries() {
                 </Link>
 
                 <span>⭐ {series.rating}</span>
-                <div className="top-rank-actions">
-                  <button
-                    onClick={() => moveSeries(index, -1)}
-                    disabled={rankingBusy || index === 0}
-                  >
-                    Up
-                  </button>
 
-                  <button
-                    onClick={() => moveSeries(index, 1)}
-                    disabled={rankingBusy || index === topSeries.length - 1}
-                  >
-                    Down
-                  </button>
+                <div className="top-drag-handle" title="Drag to reorder">
+                  ⋮⋮
                 </div>
               </div>
             ))}
