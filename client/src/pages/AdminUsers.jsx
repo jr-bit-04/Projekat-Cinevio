@@ -8,6 +8,7 @@ import api from "../services/api";
 function AdminUsers() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
+  const[nameAsc,setNameAsc] = useState(true);
 
   useEffect(() => {
     async function loadUsers() {
@@ -88,7 +89,16 @@ function AdminUsers() {
 
           <div className="admin-table users-table">
             <div className="admin-table-row admin-table-head users-table-row">
-              <span>Username</span>
+              <span className="sortByName"> 
+                <button 
+                onClick={ () => {
+                  setUsers([...users].sort((a,b)=>
+                  nameAsc ?  a.username.localeCompare(b.username) :
+                   b.username.localeCompare(a.username)
+               
+              ))
+              setNameAsc(!nameAsc)
+              }}>Username</button></span>
               <span>Email</span>
               <span>Role</span>
               <span>Joined</span>
