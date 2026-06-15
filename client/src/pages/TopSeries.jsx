@@ -108,7 +108,7 @@ function TopSeries() {
                 onDragEnd={handleDragEnd}
               >
                 <div className="top-position">
-                  #{series.position || index + 1}
+                  #{index + 1}
                 </div>
 
                 <Link

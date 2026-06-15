@@ -206,11 +206,16 @@ function Details() {
   async function addToTopList() {
   try {
     const listType = movie.type === "series" ? "top_series" : "top_movies";
+    
+    const existing = await api.get(`/top-lists/${listType}`);
+    const nextPosition = existing.data.length
+      ? Math.max(...existing.data.map((m) => m.position || 0)) + 1
+      : 1;
 
     const res = await api.post("/top-lists", {
       content_id: movie.id,
       list_type: listType,
-      position: 1,
+      position: nextPosition,
     });
 
     setTopListId(res.data.item.id);

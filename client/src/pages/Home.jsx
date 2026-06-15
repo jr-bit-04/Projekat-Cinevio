@@ -18,12 +18,12 @@ function Home() {
   // mapiramo u oblik koji MovieCard očekuje
   function mapContent(item) {
     return {
-      id: item.id,                                    // PRAVI id iz baze
+      id: item.id,                                   
       title: item.title,
       type: item.type === "series" ? "Series" : "Movie",
       year: String(item.release_year),
       rating: item.rating,
-      image: item.poster_url,                         // PRAVA slika iz baze
+      image: item.poster_url,                         
     };
   }
 

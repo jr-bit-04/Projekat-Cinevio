@@ -45,7 +45,7 @@ function getMissingContentFields(body) {
   if (!isNonEmptyString(body.description)) missing.push("Description");
   if (!isPositiveInteger(body.release_year)) missing.push("Release year");
   if (!isNonEmptyString(body.genre)) missing.push("Genre");
-  if (!isRating(body.rating)) missing.push("Rating (0–10)");
+  if (!isRating(body.rating)) missing.push("Rating (0-10)");
 
   return missing;
 }

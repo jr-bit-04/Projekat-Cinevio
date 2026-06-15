@@ -75,7 +75,7 @@ function Login() {
           </button>
 
           <p className="auth-switch">
-            Don’t have an account? <Link to="/register">Create one</Link>
+            Don't have an account? <Link to="/register">Create one</Link>
           </p>
         </form>
       </section>

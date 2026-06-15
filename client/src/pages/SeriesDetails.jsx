@@ -213,10 +213,15 @@ function SeriesDetails() {
 
   async function addToTopList() {
     try {
+      const existing = await api.get("/top-lists/top_series");
+      const nextPosition = existing.data.length
+        ? Math.max(...existing.data.map((m) => m.position || 0)) + 1
+        : 1;
+
       const res = await api.post("/top-lists", {
         content_id: Number(id),
         list_type: "top_series",
-        position: 1,
+        position: nextPosition,
       });
 
       setTopListId(res.data.item.id);

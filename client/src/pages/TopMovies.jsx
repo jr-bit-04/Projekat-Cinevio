@@ -108,7 +108,7 @@ function TopMovies() {
                 onDragEnd={handleDragEnd}
               >
                 <div className="top-position">
-                  #{movie.position || index + 1}
+                  #{index + 1}
                 </div>
 
                 <Link className="top-list-main" to={`/details/${movie.id}`}>

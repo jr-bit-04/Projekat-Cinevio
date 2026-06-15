@@ -99,6 +99,6 @@ export function AuthProvider({ children }) {
       }}
     >
     {children}
-    </AuthContext.Provider>
+    </AuthContext.Provider> 
   );
 }
