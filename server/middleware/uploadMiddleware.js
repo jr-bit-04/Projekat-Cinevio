@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 
 const storage = multer.diskStorage({
-  //cb callback funckija  javlja rezultat multeru
+  //cb callback funkcija  javlja rezultat multeru
   destination: function (req, file, cb) {
     cb(null, "uploads/");
   },

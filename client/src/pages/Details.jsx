@@ -192,7 +192,7 @@ function Details() {
   }
 
   async function deleteRating() {
-    try {
+    try { 
       await api.delete(`/ratings/${movie.id}`);
       setUserRating(null);
       toast.success("Rating removed");

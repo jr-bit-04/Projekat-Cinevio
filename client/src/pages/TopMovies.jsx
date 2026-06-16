@@ -46,6 +46,7 @@ function TopMovies() {
   }
 
   function handleDragStart(index) {
+    /*ako nije trenutno u toku snimanje novog redosljeda na server*/
     if (rankingBusy) return;
     setDragIndex(index);
   }
