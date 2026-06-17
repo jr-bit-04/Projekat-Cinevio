@@ -13,6 +13,9 @@ function Movies() {
   const [year, setYear] = useState("All");
   const [rating, setRating] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage,setCurrentPage] = useState(1);
+  const moviesPerPage = 15;
+
 
   const genres = [
     "All",
@@ -34,6 +37,10 @@ function Movies() {
     fetchMovies();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredMovies]);
+
   async function fetchMovies() {
     try {
       const res = await api.get("/content");
@@ -51,6 +58,7 @@ function Movies() {
         }));
 
       setMovies(onlyMovies);
+      //handleSort();
       setFilteredMovies(onlyMovies);
     } catch (error) {
       console.log(error);
@@ -122,6 +130,17 @@ function Movies() {
     setSearchTerm("");
     fetchMovies();
   }
+  /*
+  function handleSort(){
+    const sorted = [...filteredMovies].sort((a,b) =>{
+      return b.rating - a.rating;
+    })
+    setFilteredMovies(sorted);
+  }*/
+ const totalPages = Math.ceil(filteredMovies.length/moviesPerPage);
+ const startIndex = (currentPage-1)*moviesPerPage;
+ const currentMovies = filteredMovies.slice(startIndex,startIndex+moviesPerPage);
+
 
   return (
     <main>
@@ -197,19 +216,36 @@ function Movies() {
         >
           Clear Filters
         </button>
-
+        {/*<button className="clear-filters clean-filters-btn"
+          onClick={handleSort}
+        >Sortiraj</button>*/}
         {filteredMovies.length === 0 ? (
           <div className="empty-state">
             <h2>No movies found</h2>
             <p>Try changing your search or filters.</p>
           </div>
         ) : (
-          <div className="movie-grid">
-            {filteredMovies.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
-            ))}
-          </div>
-        )}
+              <>
+                <div className="movie-grid">
+                  {currentMovies.map((movie) => (
+                    <MovieCard key={movie.id} movie={movie} />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="pagination">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        className={page === currentPage ? "page-btn active" : "page-btn"}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
       </section>
     </main>
   );

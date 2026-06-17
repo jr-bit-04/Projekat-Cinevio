@@ -15,6 +15,10 @@ async function createReview(req, res) {
       is_public,
     } = req.body;
 
+    /*if (normalizeString(review_text).length > 1000) {
+      return res.status(400).json({ message: "Review too long (max 1000)" });
+    }*/
+
     if (!isPositiveInteger(content_id) || !isNonEmptyString(review_text)) {
       return res.status(400).json({
         message: "Valid content_id and review_text are required",

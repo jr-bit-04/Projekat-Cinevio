@@ -76,7 +76,6 @@ async function getMyWatchlist(req, res) {
     res.status(500).json({ message: "Server error" });
   }
 }
-
 async function removeFromWatchlist(req, res) {
   try {
     const userId = req.user.id;

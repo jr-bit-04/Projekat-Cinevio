@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams,useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -10,6 +10,7 @@ import { useAuth } from "../context/auth";
 function Details() {
   const { id } = useParams();
   const { user } = useAuth();
+  //const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("main");
   const [movie, setMovie] = useState(null);
@@ -396,7 +397,7 @@ function Details() {
   return (
     <main className="details-page">
       <AmbientBackground />
-
+      {/*<button onClick={() => navigate(-1)}>Nazad</button>*/} 
       <section
         className="details-hero"
         style={{
@@ -417,7 +418,6 @@ function Details() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
           />
-
           <div className="details-info">
             <span className="eyebrow">{movie.type} details</span>
 

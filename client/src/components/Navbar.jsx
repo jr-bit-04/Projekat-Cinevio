@@ -48,6 +48,7 @@ function Navbar() {
             </>
           ) : (
             <div className="user-menu">
+              
               <button
                 className="user-avatar-btn"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}

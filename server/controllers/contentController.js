@@ -44,6 +44,14 @@ async function createContent(req, res) {
       trailer_url,
     } = req.body;
 
+    /*
+    const currentYear = new Date().getFullYear();
+    if(Number(release_year) > currentYear){
+      return res.status(400).json({
+        message: `release year cannot be greater then ${currentyear}`
+      }
+      )
+    }*/
     if (
       !isNonEmptyString(title) ||
       !["movie", "series"].includes(type) ||
@@ -254,7 +262,6 @@ async function updateContent(req, res) {
 async function deleteContent(req, res) {
   try {
     const { id } = req.params;
-
     await db.query(
       `
       DELETE FROM content
@@ -314,7 +321,6 @@ async function searchContent(req, res) {
       const title = type === "movie" ? item.title : item.name;
       const releaseDate =
         type === "movie" ? item.release_date : item.first_air_date;
-
       const inserted = await db.query(
         `
         INSERT INTO content
